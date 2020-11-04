@@ -1,0 +1,36 @@
+{
+    "version": "0.2.0",
+    "configurations": [
+        {
+            "name": "OpenOCD-Debug",
+            "type": "cortex-debug",
+            "request": "launch",
+            "servertype": "openocd",
+            "executable": "build/stm32f401-usbserial-host.elf",
+            "configFiles": [
+                "interface/stlink.cfg",
+                "target/stm32f4x.cfg"
+            ],
+            "postLaunchCommands": [
+                "monitor itm port 0 on"
+            ],
+            "cwd": "${workspaceRoot}",
+            "svdFile": "STM32F401.svd",
+            "device": "stm32f4x",
+            "preLaunchTask": "build",
+            "swoConfig": {
+                "cpuFrequency": 64000000,
+                "source": "probe",
+                "swoFrequency": 1000000,
+                "enabled": true,
+                "decoders": [
+                    {
+                        "port": 0,
+                        "label": "ITM",
+                        "type": "console"
+                    }
+                ]
+            }
+        }
+    ]
+}
