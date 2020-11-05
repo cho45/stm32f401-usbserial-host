@@ -47,8 +47,8 @@ extern "C" {
 
 /* Exported macro ------------------------------------------------------------*/
 /* USER CODE BEGIN EM */
-#define RX_BUFFER_SIZE   128
-#define TX_BUFFER_SIZE   128
+#define RX_BUFFER_SIZE   256
+#define TX_BUFFER_SIZE   256
 
 /* USER CODE END EM */
 

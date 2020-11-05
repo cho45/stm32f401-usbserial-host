@@ -26,6 +26,7 @@
 /* USER CODE BEGIN Includes */
 #include <stdio.h>
 #include "usbh_core.h"
+#include "usbh_cdc.h"
 /* USER CODE END Includes */
 
 /* Private typedef -----------------------------------------------------------*/
@@ -55,6 +56,7 @@ uint8_t usbTxBuffer[TX_BUFFER_SIZE];
 uint8_t uartRxBuffer[RX_BUFFER_SIZE];
 uint8_t uartTxBuffer[TX_BUFFER_SIZE];
 size_t dma_read_index = 0;
+static uint8_t transmitting = 0;
 
 #define DMA_WRITE_INDEX(handle) ( (RX_BUFFER_SIZE - (handle)->hdmarx->Instance->NDTR) % (RX_BUFFER_SIZE) )
 
@@ -140,19 +142,26 @@ int main(void)
     */
 
     // uart to usb
-    size_t read_size = 0;
-    while (dma_read_index != DMA_WRITE_INDEX(&huart2)) {
-        uint8_t byte = uartRxBuffer[dma_read_index];
-        dma_read_index = (dma_read_index + 1) % RX_BUFFER_SIZE;
-        usbTxBuffer[read_size] = byte;
-        read_size++;
-    }
-    if (read_size > 0) {
-        printf("read %u bytes from uart\r\n", (unsigned int)read_size);
-        if (Appli_state == APPLICATION_READY) {
-          if (USBH_CDC_Transmit(&hUsbHostFS, usbTxBuffer, read_size) != USBH_OK) {
-              printf("cdc transmit failed\r\n");
-          }
+    if (!transmitting) {
+        size_t read_size = 0;
+        size_t prev_dma_read_index = dma_read_index;
+        while (dma_read_index != DMA_WRITE_INDEX(&huart2)) {
+            uint8_t byte = uartRxBuffer[dma_read_index];
+            dma_read_index = (dma_read_index + 1) % RX_BUFFER_SIZE;
+            usbTxBuffer[read_size] = byte;
+            read_size++;
+        }
+        if (read_size > 0) {
+            usbTxBuffer[read_size] = 0;
+            // printf("read %u bytes from uart %s\r\n", (unsigned int)read_size, usbTxBuffer);
+            if (Appli_state == APPLICATION_READY) {
+              if (USBH_CDC_Transmit(&hUsbHostFS, usbTxBuffer, read_size) == USBH_OK) {
+                  transmitting = 1;
+              } else {
+                  printf("cdc transmit failed\r\n");
+                  dma_read_index = prev_dma_read_index;
+              }
+            }
         }
     }
   }
@@ -217,7 +226,9 @@ static void MX_USART2_UART_Init(void)
 
   /* USER CODE END USART2_Init 1 */
   huart2.Instance = USART2;
-  huart2.Init.BaudRate = 460800;
+  // huart2.Init.BaudRate = 460800;
+  // huart2.Init.BaudRate = 115200;
+  huart2.Init.BaudRate = 921600;
   huart2.Init.WordLength = UART_WORDLENGTH_8B;
   huart2.Init.StopBits = UART_STOPBITS_1;
   huart2.Init.Parity = UART_PARITY_NONE;
@@ -286,6 +297,11 @@ int _write(int file, char *ptr, int len) {
 		ITM_SendChar(*ptr++);
 	}
 	return len;
+}
+
+void USBH_CDC_TransmitCallback(USBH_HandleTypeDef *phost)
+{
+    transmitting = 0;
 }
 
 /* USER CODE END 4 */

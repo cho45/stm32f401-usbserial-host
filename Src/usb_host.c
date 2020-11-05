@@ -84,7 +84,7 @@ void USBH_CDC_ReceiveCallback(USBH_HandleTypeDef * phost)
       if (HAL_UART_Transmit_DMA(&huart2, uartTxBuffer, len) != HAL_OK) {
           printf("ng to transmit DMA %u\r\n", len);
       } else {
-          printf("ok to transmit DMA %u\r\n", len);
+          // printf("ok to transmit DMA %u\r\n", len);
       }
     }
 
